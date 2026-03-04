@@ -1,0 +1,112 @@
+<html>
+<head>
+  <title>Table: {{tableName}}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { border: 1px solid #ccc; padding: 12px; text-align: left; }
+    th { background: #f4f4f4; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+    button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; }
+    .insert-btn { background: #28a745; color: white; }
+    .delete-btn { background: #dc3545; color: white; }
+    .search-box { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+    .pagination { margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Table: <strong>{{tableName}}</strong></h1>
+  <a href="/">← Back to all tables</a>
+
+  <!-- SEARCH -->
+  <div class="search-box">
+    <form action="/table/{{tableName}}" method="GET">
+      <input type="text" name="q" value="{{searchTerm}}" placeholder="Search anything in this table...">
+      <input type="hidden" name="limit" value="{{limit}}">
+      <button type="submit">Search</button>
+      {{#if searchTerm}}
+        <a href="/table/{{tableName}}?limit={{limit}}"><button type="button">Clear</button></a>
+      {{/if}}
+    </form>
+  </div>
+
+  <h2>Add New Row</h2>
+  <form action="/table/{{tableName}}/insert" method="POST" class="form-grid">
+    {{#each columns}}
+      {{#unless (eq this.column_name "id")}}
+        <div>
+          <label><strong>{{this.column_name}}</strong></label><br>
+          <input type="text" name="{{this.column_name}}">
+        </div>
+      {{/unless}}
+    {{/each}}
+    <button type="submit" class="insert-btn" style="grid-column: span 2;">✅ Insert Row</button>
+  </form>
+
+  <h2>Data ({{totalRows}} total rows)</h2>
+
+  {{#if rows.length}}
+    <table>
+      <thead>
+        <tr>
+          {{#each columns}}<th>{{this.column_name}}</th>{{/each}}
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each rows}}
+          <tr>
+            {{#each this}}
+              <td>{{this}}</td>
+            {{/each}}
+            <td>
+              <a href="/table/{{../tableName}}/edit/{{this.id}}"><button>Edit</button></a>
+              <form action="/table/{{../tableName}}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this row?')">
+                <input type="hidden" name="id" value="{{this.id}}">
+                <button type="submit" class="delete-btn">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{else}}
+    <p>No matching rows found.</p>
+  {{/if}}
+
+  <!-- PAGINATION -->
+  {{#if totalPages}}
+  <div class="pagination">
+    <div>
+      Showing <strong>{{startRow}}</strong>–<strong>{{endRow}}</strong> of <strong>{{totalRows}}</strong>
+    </div>
+
+    <div>
+      <span>Rows per page: </span>
+      <select onchange="location = this.value">
+        <option value="/table/{{tableName}}?page=1&limit=10{{#if searchTerm}}&q={{searchTerm}}{{/if}}" {{#eq limit 10}}selected{{/eq}}>10</option>
+        <option value="/table/{{tableName}}?page=1&limit=25{{#if searchTerm}}&q={{searchTerm}}{{/if}}" {{#eq limit 25}}selected{{/eq}}>25</option>
+        <option value="/table/{{tableName}}?page=1&limit=50{{#if searchTerm}}&q={{searchTerm}}{{/if}}" {{#eq limit 50}}selected{{/eq}}>50</option>
+        <option value="/table/{{tableName}}?page=1&limit=100{{#if searchTerm}}&q={{searchTerm}}{{/if}}" {{#eq limit 100}}selected{{/eq}}>100</option>
+      </select>
+    </div>
+
+    <div>
+      {{#if hasPrev}}
+        <a href="/table/{{tableName}}?page={{sub currentPage 1}}&limit={{limit}}{{#if searchTerm}}&q={{searchTerm}}{{/if}}">
+          <button>← Previous</button>
+        </a>
+      {{/if}}
+
+      <span style="margin:0 15px; font-weight: bold;">Page {{currentPage}} of {{totalPages}}</span>
+
+      {{#if hasNext}}
+        <a href="/table/{{tableName}}?page={{add currentPage 1}}&limit={{limit}}{{#if searchTerm}}&q={{searchTerm}}{{/if}}">
+          <button>Next →</button>
+        </a>
+      {{/if}}
+    </div>
+  </div>
+  {{/if}}
+</body>
+</html>

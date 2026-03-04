@@ -1,0 +1,75 @@
+<html>
+<head>
+  <title>SQL ^-^</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .file-item { padding: 15px; border: 1px solid #ddd; margin: 10px 0; border-radius: 8px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+    button { padding: 8px 14px; border: none; border-radius: 5px; cursor: pointer; }
+    .btn-create { background: #28a745; color: white; }
+    .btn-delete { background: #dc3545; color: white; }
+    input, select { padding: 10px; margin: 5px 0; }
+    .column-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+  </style>
+</head>
+<body>
+
+<div class="grid">
+  <!-- CREATE -->
+  <div class="card">
+    <h2>📁 Create New Table</h2>
+    <form action="/create" method="POST">
+      <input type="text" name="tableName" placeholder="Table name (e.g. users)" required style="width:100%; padding:12px;" />
+
+      <h3>Columns <button type="button" onclick="addColumn()">+ Add Column</button></h3>
+      <div id="columnsContainer"></div>
+
+      <button type="submit" class="btn-create">Create Table</button>
+    </form>
+  </div>
+
+  <!-- LIST -->
+  <div class="card">
+    <h2>📊 Database Tables</h2>
+    {{#each tables}}
+      <div class="file-item">
+        <strong>{{this.name}}</strong> ({{this.count}} rows) 
+        
+        <a href="/table/{{this.name}}"><button>View Data</button></a>
+        
+        <form action="/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete table {{this.name}}?')">
+          <input type="hidden" name="tableName" value="{{this.name}}" />
+          <button type="submit" class="btn-delete">Delete</button>
+        </form>
+      </div>
+    {{else}}
+      <p>No tables yet — create one above!</p>
+    {{/each}}
+  </div>
+</div>
+
+<script>
+  function addColumn() {
+    const container = document.getElementById('columnsContainer')
+    const index = container.children.length
+    const div = document.createElement('div')
+    div.className = 'column-row'
+    div.innerHTML = `
+      <input type="text" name="columns[${index}][name]" placeholder="Column name" required>
+      <select name="columns[${index}][type]" required>
+        <option value="">Type</option>
+        <option value="VARCHAR(255)">VARCHAR(255)</option>
+        <option value="TEXT">TEXT</option>
+        <option value="INT">INT</option>
+        <option value="DATE">DATE</option>
+        <option value="BOOLEAN">BOOLEAN</option>
+      </select>
+      <button type="button" onclick="this.parentElement.remove()">×</button>
+    `
+    container.appendChild(div)
+  }
+  window.onload = addColumn
+</script>
+</body>
+</html>

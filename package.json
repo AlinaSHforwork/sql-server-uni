@@ -1,0 +1,29 @@
+{
+  "name": "sql-server-uni",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlinaSHforwork/sql-server-uni.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AlinaSHforwork/sql-server-uni/issues"
+  },
+  "homepage": "https://github.com/AlinaSHforwork/sql-server-uni#readme",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-handlebars": "^8.0.6",
+    "hbs": "^4.2.0",
+    "pg": "^8.19.0"
+  }
+}

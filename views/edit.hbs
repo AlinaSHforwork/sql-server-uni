@@ -1,0 +1,33 @@
+<html>
+<head>
+  <title>Edit Row in {{tableName}}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; max-width: 800px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input { padding: 10px; width: 100%; box-sizing: border-box; }
+    button { padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+    .cancel { background: #6c757d; }
+  </style>
+</head>
+<body>
+  <h1>Edit Row #{{id}} in <strong>{{tableName}}</strong></h1>
+  <a href="/table/{{tableName}}">← Back to table</a>
+
+  <form action="/table/{{tableName}}/update/{{id}}" method="POST" class="form-grid">
+    {{#each columns}}
+      {{#unless (eq this.column_name "id")}}
+        <div>
+          <label>{{this.column_name}} ({{this.data_type}})</label>
+          <input type="text" 
+                 name="{{this.column_name}}" 
+                 value="{{lookup ../row this.column_name}}">
+        </div>
+      {{/unless}}
+    {{/each}}
+    <button type="submit" style="grid-column: span 2;">Save Changes</button>
+  </form>
+
+  <a href="/table/{{tableName}}"><button class="cancel" type="button">Cancel</button></a>
+</body>
+</html>
