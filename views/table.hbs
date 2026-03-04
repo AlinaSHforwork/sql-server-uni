@@ -82,16 +82,6 @@
     </div>
 
     <div>
-      <span>Rows per page: </span>
-      <select onchange="location = this.value">
-        <option value="/table/{{tableName}}?page=1&limit=10{{#if searchTerm}}&q={{searchTerm}}{{/if}}" {{#eq limit 10}}selected{{/eq}}>10</option>
-        <option value="/table/{{tableName}}?page=1&limit=25{{#if searchTerm}}&q={{searchTerm}}{{/if}}" {{#eq limit 25}}selected{{/eq}}>25</option>
-        <option value="/table/{{tableName}}?page=1&limit=50{{#if searchTerm}}&q={{searchTerm}}{{/if}}" {{#eq limit 50}}selected{{/eq}}>50</option>
-        <option value="/table/{{tableName}}?page=1&limit=100{{#if searchTerm}}&q={{searchTerm}}{{/if}}" {{#eq limit 100}}selected{{/eq}}>100</option>
-      </select>
-    </div>
-
-    <div>
       {{#if hasPrev}}
         <a href="/table/{{tableName}}?page={{sub currentPage 1}}&limit={{limit}}{{#if searchTerm}}&q={{searchTerm}}{{/if}}">
           <button>← Previous</button>
