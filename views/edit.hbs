@@ -8,26 +8,70 @@
     input { padding: 10px; width: 100%; box-sizing: border-box; }
     button { padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
     .cancel { background: #6c757d; }
+    .error-msg { color: red; margin-top: 10px; display: none; }
   </style>
 </head>
 <body>
   <h1>Edit Row #{{id}} in <strong>{{tableName}}</strong></h1>
   <a href="/table/{{tableName}}">← Back to table</a>
 
-  <form action="/table/{{tableName}}/update/{{id}}" method="POST" class="form-grid">
+  <div class="form-grid" id="editForm">
     {{#each columns}}
       {{#unless (eq this.column_name "id")}}
         <div>
           <label>{{this.column_name}} ({{this.data_type}})</label>
-          <input type="text" 
-                 name="{{this.column_name}}" 
+          <input type="text"
+                 data-col="{{this.column_name}}"
                  value="{{lookup ../row this.column_name}}">
         </div>
       {{/unless}}
     {{/each}}
-    <button type="submit" style="grid-column: span 2;">Save Changes</button>
-  </form>
 
-  <a href="/table/{{tableName}}"><button class="cancel" type="button">Cancel</button></a>
+    <div style="grid-column: span 2; display: flex; gap: 10px; margin-top: 10px;">
+      <button type="button" onclick="saveRow()">Save Changes</button>
+      <a href="/table/{{tableName}}"><button class="cancel" type="button">Cancel</button></a>
+    </div>
+    <p class="error-msg" id="editError" style="grid-column: span 2;"></p>
+  </div>
+
+<script>
+  const TABLE_NAME = '{{tableName}}';
+  const ROW_ID = '{{id}}';
+
+  async function saveRow() {
+    const errEl = document.getElementById('editError');
+    errEl.style.display = 'none';
+
+    const inputs = document.querySelectorAll('#editForm [data-col]');
+    const body = {};
+    inputs.forEach(input => {
+      body[input.dataset.col] = input.value;
+    });
+
+    if (Object.keys(body).length === 0) {
+      errEl.textContent = 'No fields to update.';
+      errEl.style.display = 'block';
+      return;
+    }
+]
+    const res = await fetch(
+      `/table/${encodeURIComponent(TABLE_NAME)}/rows/${encodeURIComponent(ROW_ID)}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+
+    if (!res.ok) {
+      const data = await res.json();
+      errEl.textContent = data.error || 'Update failed.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    window.location.href = `/table/${encodeURIComponent(TABLE_NAME)}`;
+  }
+</script>
 </body>
 </html>

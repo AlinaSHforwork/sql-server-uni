@@ -12,6 +12,7 @@
     .delete-btn { background: #dc3545; color: white; }
     .search-box { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
     .pagination { margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+    .error-msg { color: red; margin-top: 8px; display: none; }
   </style>
 </head>
 <body>
@@ -31,22 +32,23 @@
   </div>
 
   <h2>Add New Row</h2>
-  <form action="/table/{{tableName}}/insert" method="POST" class="form-grid">
+  <div class="form-grid" id="insertForm">
     {{#each columns}}
       {{#unless (eq this.column_name "id")}}
         <div>
           <label><strong>{{this.column_name}}</strong></label><br>
-          <input type="text" name="{{this.column_name}}">
+          <input type="text" data-col="{{this.column_name}}">
         </div>
       {{/unless}}
     {{/each}}
-    <button type="submit" class="insert-btn" style="grid-column: span 2;">✅ Insert Row</button>
-  </form>
+    <button type="button" class="insert-btn" style="grid-column: span 2;" onclick="insertRow()">✅ Insert Row</button>
+    <p class="error-msg" id="insertError" style="grid-column: span 2;"></p>
+  </div>
 
   <h2>Data ({{totalRows}} total rows)</h2>
 
   {{#if rows.length}}
-    <table>
+    <table id="dataTable">
       <thead>
         <tr>
           {{#each columns}}<th>{{this.column_name}}</th>{{/each}}
@@ -55,16 +57,13 @@
       </thead>
       <tbody>
         {{#each rows}}
-          <tr>
+          <tr id="row-{{this.id}}">
             {{#each this}}
               <td>{{this}}</td>
             {{/each}}
             <td>
-              <a href="/table/{{../tableName}}/edit/{{this.id}}"><button>Edit</button></a>
-              <form action="/table/{{../tableName}}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this row?')">
-                <input type="hidden" name="id" value="{{this.id}}">
-                <button type="submit" class="delete-btn">Delete</button>
-              </form>
+              <a href="/table/{{../tableName}}/rows/{{this.id}}"><button>Edit</button></a>
+              <button class="delete-btn" onclick="deleteRow('{{this.id}}')">Delete</button>
             </td>
           </tr>
         {{/each}}
@@ -98,5 +97,61 @@
     </div>
   </div>
   {{/if}}
+
+<script>
+  const TABLE_NAME = '{{tableName}}';
+
+  async function insertRow() {
+    const errEl = document.getElementById('insertError');
+    errEl.style.display = 'none';
+
+    const inputs = document.querySelectorAll('#insertForm [data-col]');
+    const body = {};
+    inputs.forEach(input => {
+      if (input.value.trim() !== '') {
+        body[input.dataset.col] = input.value.trim();
+      }
+    });
+
+    if (Object.keys(body).length === 0) {
+      errEl.textContent = 'Please fill in at least one field.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const res = await fetch(`/table/${encodeURIComponent(TABLE_NAME)}/rows`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      errEl.textContent = data.error || 'Insert failed.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    location.reload();
+  }
+
+  async function deleteRow(id) {
+    if (!confirm('Delete this row?')) return;
+
+    const res = await fetch(
+      `/table/${encodeURIComponent(TABLE_NAME)}/rows/${encodeURIComponent(id)}`,
+      { method: 'DELETE' }
+    );
+
+    if (!res.ok) {
+      const data = await res.json();
+      alert(data.error || 'Delete failed.');
+      return;
+    }
+
+    const row = document.getElementById(`row-${id}`);
+    if (row) row.remove();
+  }
+</script>
 </body>
 </html>

@@ -11,6 +11,7 @@
     .btn-delete { background: #dc3545; color: white; }
     input, select { padding: 10px; margin: 5px 0; }
     .column-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+    .error-msg { color: red; margin-top: 10px; display: none; }
   </style>
 </head>
 <body>
@@ -19,45 +20,43 @@
   <!-- CREATE -->
   <div class="card">
     <h2>📁 Create New Table</h2>
-    <form action="/create" method="POST">
-      <input type="text" name="tableName" placeholder="Table name (e.g. users)" required style="width:100%; padding:12px;" />
+    <div>
+      <input id="tableNameInput" type="text" placeholder="Table name (e.g. users)" style="width:100%; padding:12px;" />
 
       <h3>Columns <button type="button" onclick="addColumn()">+ Add Column</button></h3>
       <div id="columnsContainer"></div>
 
-      <button type="submit" class="btn-create">Create Table</button>
-    </form>
+      <button type="button" class="btn-create" onclick="createTable()">Create Table</button>
+      <p class="error-msg" id="createError"></p>
+    </div>
   </div>
 
   <!-- LIST -->
   <div class="card">
     <h2>📊 Database Tables</h2>
-    {{#each tables}}
-      <div class="file-item">
-        <strong>{{this.name}}</strong> ({{this.count}} rows) 
-        
-        <a href="/table/{{this.name}}"><button>View Data</button></a>
-        
-        <form action="/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete table {{this.name}}?')">
-          <input type="hidden" name="tableName" value="{{this.name}}" />
-          <button type="submit" class="btn-delete">Delete</button>
-        </form>
-      </div>
-    {{else}}
-      <p>No tables yet — create one above!</p>
-    {{/each}}
+    <div id="tableList">
+      {{#each tables}}
+        <div class="file-item" id="table-{{this.name}}">
+          <strong>{{this.name}}</strong> ({{this.count}} rows)
+          <a href="/table/{{this.name}}"><button>View Data</button></a>
+          <button class="btn-delete" onclick="deleteTable('{{this.name}}')">Delete</button>
+        </div>
+      {{else}}
+        <p id="emptyMsg">No tables yet — create one above!</p>
+      {{/each}}
+    </div>
   </div>
 </div>
 
 <script>
   function addColumn() {
-    const container = document.getElementById('columnsContainer')
-    const index = container.children.length
-    const div = document.createElement('div')
-    div.className = 'column-row'
+    const container = document.getElementById('columnsContainer');
+    const index = container.children.length;
+    const div = document.createElement('div');
+    div.className = 'column-row';
     div.innerHTML = `
-      <input type="text" name="columns[${index}][name]" placeholder="Column name" required>
-      <select name="columns[${index}][type]" required>
+      <input type="text" data-col-name="${index}" placeholder="Column name" required>
+      <select data-col-type="${index}" required>
         <option value="">Type</option>
         <option value="VARCHAR(255)">VARCHAR(255)</option>
         <option value="TEXT">TEXT</option>
@@ -66,10 +65,76 @@
         <option value="BOOLEAN">BOOLEAN</option>
       </select>
       <button type="button" onclick="this.parentElement.remove()">×</button>
-    `
-    container.appendChild(div)
+    `;
+    container.appendChild(div);
   }
-  window.onload = addColumn
+
+  async function createTable() {
+    const tableName = document.getElementById('tableNameInput').value.trim();
+    const errEl = document.getElementById('createError');
+    errEl.style.display = 'none';
+
+    if (!tableName) {
+      errEl.textContent = 'Table name is required.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const container = document.getElementById('columnsContainer');
+    const rows = container.querySelectorAll('.column-row');
+    const columns = [];
+
+    for (const row of rows) {
+      const name = row.querySelector('[data-col-name]').value.trim();
+      const type = row.querySelector('[data-col-type]').value;
+      if (name && type) columns.push({ name, type });
+    }
+
+    if (columns.length === 0) {
+      errEl.textContent = 'At least one column is required.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const res = await fetch('/tables', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tableName, columns }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      errEl.textContent = data.error || 'Failed to create table.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    location.reload();
+  }
+
+  async function deleteTable(name) {
+    if (!confirm(`Delete table "${name}"? This cannot be undone.`)) return;
+
+    const res = await fetch(`/tables/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      alert(data.error || 'Failed to delete table.');
+      return;
+    }
+
+    const el = document.getElementById(`table-${name}`);
+    if (el) el.remove();
+
+    if (!document.querySelector('.file-item')) {
+      const list = document.getElementById('tableList');
+      list.innerHTML = '<p>No tables yet — create one above!</p>';
+    }
+  }
+
+  window.onload = addColumn;
 </script>
 </body>
 </html>
