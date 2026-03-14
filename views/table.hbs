@@ -19,7 +19,6 @@
   <h1>Table: <strong>{{tableName}}</strong></h1>
   <a href="/">← Back to all tables</a>
 
-  <!-- SEARCH -->
   <div class="search-box">
     <form action="/table/{{tableName}}" method="GET">
       <input type="text" name="q" value="{{searchTerm}}" placeholder="Search anything in this table...">
@@ -73,22 +72,18 @@
     <p>No matching rows found.</p>
   {{/if}}
 
-  <!-- PAGINATION -->
   {{#if totalPages}}
   <div class="pagination">
     <div>
       Showing <strong>{{startRow}}</strong>–<strong>{{endRow}}</strong> of <strong>{{totalRows}}</strong>
     </div>
-
     <div>
       {{#if hasPrev}}
         <a href="/table/{{tableName}}?page={{sub currentPage 1}}&limit={{limit}}{{#if searchTerm}}&q={{searchTerm}}{{/if}}">
           <button>← Previous</button>
         </a>
       {{/if}}
-
       <span style="margin:0 15px; font-weight: bold;">Page {{currentPage}} of {{totalPages}}</span>
-
       {{#if hasNext}}
         <a href="/table/{{tableName}}?page={{add currentPage 1}}&limit={{limit}}{{#if searchTerm}}&q={{searchTerm}}{{/if}}">
           <button>Next →</button>
@@ -132,7 +127,22 @@
       return;
     }
 
-    location.reload();
+    const newRow = await res.json();
+    inputs.forEach(input => input.value = '');
+
+    const tbody = document.querySelector('#dataTable tbody');
+    if (tbody) {
+      const cols = Array.from(inputs).map(i => i.dataset.col);
+      const tr = document.createElement('tr');
+      tr.id = `row-${newRow.id}`;
+      tr.innerHTML = `<td>${newRow.id}</td>` +
+        cols.map(col => `<td>${newRow[col] ?? ''}</td>`).join('') +
+        `<td>
+          <a href="/table/${encodeURIComponent(TABLE_NAME)}/rows/${newRow.id}"><button>Edit</button></a>
+          <button class="delete-btn" onclick="deleteRow('${newRow.id}')">Delete</button>
+        </td>`;
+      tbody.appendChild(tr);
+    }
   }
 
   async function deleteRow(id) {
